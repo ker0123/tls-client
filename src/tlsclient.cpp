@@ -50,7 +50,7 @@ Result from_ERR(string more_info = "") {
   if (more_info.empty()) {
     return Result::Error(first_err, err_msg);
   } else {
-    return Result::Error(first_err, err_msg + "\n^ "s + more_info);
+    return Result::Error(first_err, err_msg + string("\n^ ") + more_info);
   }
 }
 
@@ -76,9 +76,7 @@ Result from_SSL(SSL *ssl, int last_ret, string more_info = "") {
     err_msg = "operation needs socket writable state (want write)";
   } else if (err_code == SSL_ERROR_SYSCALL) {
     if (errno != 0) {
-      char buf[256] = {0};
-      strerror_s(buf, sizeof(buf), errno);
-      err_msg = "i/o syscall failure: "s + buf;
+      err_msg = string("i/o syscall failure, errno = ") + to_string(errno);
     } else {
       err_msg = "peer closed connection unexpectedly (eof)";
     }
@@ -100,7 +98,7 @@ Result from_SSL(SSL *ssl, int last_ret, string more_info = "") {
   if (more_info.empty()) {
     return Result::Error(err_code, err_msg);
   } else {
-    return Result::Error(err_code, err_msg + "\n^ "s + more_info);
+    return Result::Error(err_code, err_msg + "\n^ " + more_info);
   }
 }
 
@@ -262,7 +260,7 @@ Result TlsClient::init() {
 
   // 检查状态和参数
   if (socket_fd < 0) {
-    return Result::Error(1, "[init] invalid socket_fd "s + to_string(socket_fd));
+    return Result::Error(1, "[init] invalid socket_fd " + to_string(socket_fd));
   }
 
   if (ssl_ctx != nullptr || ssl != nullptr) {
@@ -279,7 +277,7 @@ Result TlsClient::init() {
   if (ssl_ctx == nullptr) {
     auto error_code = ERR_get_error();
     auto error_msg = ERR_error_string(error_code, nullptr);
-    return Result::Error(error_code, error_msg + "\nin init() call SSL_CTX_new()"s);
+    return Result::Error(error_code, error_msg + string("\nin init() call SSL_CTX_new()"));
   }
 
   int ret = SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_2_VERSION);
@@ -300,7 +298,7 @@ Result TlsClient::init() {
     ret = use_default_ca ? SSL_CTX_set_default_verify_paths(ssl_ctx) : (load_ca_from_pem(ssl_ctx, cfg.ca) ? 1 : 0);
     if (ret != 1) {
       const char *action = use_default_ca ? "SSL_CTX_set_default_verify_paths" : "load_ca_from_pem";
-      return from_ERR("in init() call "s + action);
+      return from_ERR("in init() call " + string(action));
     }
 
     return Result::Ok();
@@ -422,7 +420,7 @@ Result TlsClient::send(const uint8_t *data, size_t len, size_t *sent) {
   if (ret <= 0) {
     return from_SSL(ssl, ret, "in send() call SSL_write()");
   }
-  return Result(0, "Sent "s + to_string(ret) + " bytes");
+  return Result(0, "sent " + to_string(ret) + " bytes");
 }
 
 /// 接收数据
@@ -462,7 +460,7 @@ Result TlsClient::recv(uint8_t *buffer, size_t capacity, size_t *received) {
   if (ret <= 0) {
     return from_SSL(ssl, ret, "in recv() call SSL_read()");
   }
-  return Result(0, "Received "s + to_string(ret) + " bytes");
+  return Result(0, "received " + to_string(ret) + " bytes");
 }
 
 /// 关闭客户端
