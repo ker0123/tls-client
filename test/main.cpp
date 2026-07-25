@@ -64,6 +64,7 @@ int main() {
     }
     cout << "[" << now() << "] TCP connected to 192.140.163.222:443" << endl;
 
+    // 创建一个 TlsClient 对象, 并进行握手和发送数据
     TlsClient client(static_cast<int>(sock), {false, ""s, cert, key, "kers.site"s});
     auto result = client.init();
     cout << "[" << now() << "] init() -> " << result.get_code() << ": " << result.get_message() << endl;
@@ -73,8 +74,13 @@ int main() {
     vector<uint8_t> buffer(cmd.begin(), cmd.end());
     result = client.send(buffer.data(), buffer.size());
     cout << "[" << now() << "] send() -> " << result.get_code() << ": " << result.get_message() << endl;
+    vector<uint8_t> recv_buffer(1024);
+    result = client.recv(recv_buffer.data(), recv_buffer.size());
+    cout << "[" << now() << "] recv() -> " << result.get_code() << ": " << result.get_message() << endl;
     result = client.shutdown();
     cout << "[" << now() << "] shutdown() -> " << result.get_code() << ": " << result.get_message() << endl;
+
+    // 关闭 socket 和清理 winsock
     closesocket(sock);
     WSACleanup();
     return 0;
