@@ -14,6 +14,7 @@ mkdir -p "${dst_abs}/tlsclient/lib/armeabi-v7a"
 cp -f "${repo_root}/src/tlsclient.h" "${dst_abs}/tlsclient/include/"
 cp -f "${repo_root}/android/obj/local/arm64-v8a/libtlsclient.a" "${dst_abs}/tlsclient/lib/arm64-v8a/"
 cp -f "${repo_root}/android/obj/local/armeabi-v7a/libtlsclient.a" "${dst_abs}/tlsclient/lib/armeabi-v7a/"
+cp -f "${repo_root}/android/module.mk" "${dst_abs}/tlsclient/Android.mk"
 cp -f "${repo_root}/README.md" "${dst_abs}/tlsclient/"
 
 cd "${dst_abs}"
