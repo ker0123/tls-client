@@ -1,4 +1,7 @@
 android/obj/
 build/
-key/
+crt&key/**.crt
+crt&key/**.csr
+crt&key/**.key
+crt&key/**.srl
 out/

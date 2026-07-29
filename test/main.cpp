@@ -28,10 +28,10 @@ int main() {
 
     // 把证书和私钥从文件读为字符串
 
-    fstream cert_file("key/Tester.pem", ios::in);
-    fstream key_file("key/Tester.key", ios::in);
+    fstream cert_file("crt&key/client_01.crt", ios::in);
+    fstream key_file("crt&key/client_01_private.key", ios::in);
     if (!cert_file.is_open() || !key_file.is_open()) {
-        cerr << "Failed to open cert.pem or key.pem" << endl;
+        cerr << "Failed to open cert or key" << endl;
         return 1;
     }
     string cert((istreambuf_iterator<char>(cert_file)), istreambuf_iterator<char>());
@@ -53,8 +53,8 @@ int main() {
 
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(443);
-    inet_pton(AF_INET, "192.140.163.222", &addr.sin_addr);
+    addr.sin_port = htons(30504);
+    inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
     if (connect(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR) {
         cerr << "connect() failed: " << WSAGetLastError() << endl;
@@ -62,7 +62,7 @@ int main() {
         WSACleanup();
         return 1;
     }
-    cout << "[" << now() << "] TCP connected to 192.140.163.222:443" << endl;
+    cout << "[" << now() << "] TCP connected to 127.0.0.1:30504" << endl;
 
     // 创建一个 TlsClient 对象, 并进行握手和发送数据
     TlsClient client(static_cast<int>(sock), {false, ""s, cert, key, "kers.site"s});
