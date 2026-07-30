@@ -1,8 +1,10 @@
 #include "tlsclient.h"
 
 #include <cerrno>
+#include <chrono>
 #include <climits>
 #include <cstring>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 
@@ -361,7 +363,7 @@ Result TlsClient::init() {
 ///
 /// - 检查状态, 可能提前返回
 /// - 调用 SSL_connect 进行握手
-Result TlsClient::hand_shake() {
+Result TlsClient::hand_shake(time_t timeout_ms) {
   // 检查状态, 可能提前返回
   if (!is_initialized()) {
     return Result::Error(1, "[hand_shake] not initialized");
@@ -375,6 +377,16 @@ Result TlsClient::hand_shake() {
 
   // 尝试连接
   int ret = SSL_connect(ssl);
+  auto start_time = chrono::steady_clock::now();  
+  while (ret == SSL_ERROR_WANT_READ || ret == SSL_ERROR_WANT_WRITE) {
+    auto now = chrono::steady_clock::now();
+    auto elapsed_ms = chrono::duration_cast<chrono::milliseconds>(now - start_time).count();
+    if (elapsed_ms >= timeout_ms) {
+      return Result::Error(1, "[hand_shake] handshake timed out (" + to_string(elapsed_ms) + " ms)");
+    }
+    this_thread::sleep_for(chrono::milliseconds(10));
+    ret = SSL_connect(ssl);
+  }
   if (ret != 1) {
     return from_SSL(ssl, ret, "in hand_shake() call SSL_connect()");
   }

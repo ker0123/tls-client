@@ -79,7 +79,7 @@ public:
   tls::Result init();
 
   /// 执行 TLS 握手
-  tls::Result hand_shake();
+  tls::Result hand_shake(time_t timeout_ms = 100);
 
   /// 发送加密的应用数据.
   tls::Result send(const uint8_t *data, size_t len, size_t *sent = nullptr);
