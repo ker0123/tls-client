@@ -287,11 +287,6 @@ Result TlsClient::init() {
     return from_ERR("in init() call SSL_CTX_set_min_proto_version()");
   }
 
-  ret = SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_2_VERSION);
-  if (ret != 1) {
-    return from_ERR("in init() call SSL_CTX_set_max_proto_version()");
-  }
-
   /// 服务器证书校验过程
   auto verify_server = [&]() {
     SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, nullptr);
@@ -377,8 +372,14 @@ Result TlsClient::hand_shake(time_t timeout_ms) {
 
   // 尝试连接
   int ret = SSL_connect(ssl);
-  auto start_time = chrono::steady_clock::now();  
-  while (ret == SSL_ERROR_WANT_READ || ret == SSL_ERROR_WANT_WRITE) {
+  auto start_time = chrono::steady_clock::now();
+  while (ret != 1) {
+    int error_code = SSL_get_error(ssl, ret);
+    // 如果不是 WANT_READ/WANT_WRITE, 说明握手失败, 返回错误
+    if (error_code != SSL_ERROR_WANT_READ && error_code != SSL_ERROR_WANT_WRITE) {
+      return from_SSL(ssl, ret, "in hand_shake() call SSL_connect()");
+    }
+    // 如果是 WANT_READ/WANT_WRITE, 则在一定时间内重复调用 SSL_connect
     auto now = chrono::steady_clock::now();
     auto elapsed_ms = chrono::duration_cast<chrono::milliseconds>(now - start_time).count();
     if (elapsed_ms >= timeout_ms) {
@@ -386,9 +387,6 @@ Result TlsClient::hand_shake(time_t timeout_ms) {
     }
     this_thread::sleep_for(chrono::milliseconds(10));
     ret = SSL_connect(ssl);
-  }
-  if (ret != 1) {
-    return from_SSL(ssl, ret, "in hand_shake() call SSL_connect()");
   }
 
   handshake_done = true;
