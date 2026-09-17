@@ -26,14 +26,16 @@ int main() {
         return oss.str();
     };
 
-    // 把证书和私钥从文件读为字符串
+    // 把 CA, 证书和私钥从文件读为字符串
 
-    fstream cert_file("crt&key/client_01.crt", ios::in);
-    fstream key_file("crt&key/client_01_private.key", ios::in);
-    if (!cert_file.is_open() || !key_file.is_open()) {
-        cerr << "Failed to open cert or key" << endl;
+    fstream ca_file("crt&key/Tester.pem", ios::in);
+    fstream cert_file("crt&key/Tester.crt", ios::in);
+    fstream key_file("crt&key/Tester.key", ios::in);
+    if (!ca_file.is_open() || !cert_file.is_open() || !key_file.is_open()) {
+        cerr << "Failed to open ca, cert or key" << endl;
         return 1;
     }
+    string ca((istreambuf_iterator<char>(ca_file)), istreambuf_iterator<char>());
     string cert((istreambuf_iterator<char>(cert_file)), istreambuf_iterator<char>());
     string key((istreambuf_iterator<char>(key_file)), istreambuf_iterator<char>());
 
@@ -54,7 +56,7 @@ int main() {
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(30504);
-    inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+    inet_pton(AF_INET, "192.168.69.21", &addr.sin_addr);
 
     if (connect(sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR) {
         cerr << "connect() failed: " << WSAGetLastError() << endl;
@@ -62,15 +64,15 @@ int main() {
         WSACleanup();
         return 1;
     }
-    cout << "[" << now() << "] TCP connected to 127.0.0.1:30504" << endl;
+    cout << "[" << now() << "] TCP connected to 192.168.69.21:30504" << endl;
 
     // 创建一个 TlsClient 对象, 并进行握手和发送数据
-    TlsClient client(static_cast<int>(sock), {false, ""s, cert, key, "kers.site"s});
+    TlsClient client(static_cast<int>(sock), {true, ca, cert, key, ""s});
     auto result = client.init();
     cout << "[" << now() << "] init() -> " << result.get_code() << ": " << result.get_message() << endl;
     result = client.hand_shake();
     cout << "[" << now() << "] hand_shake() -> " << result.get_code() << ": " << result.get_message() << endl;
-    string cmd = "\x10\x96\x09";
+    string cmd = "\x10\x02\x00\x07\x00\x02\x01\x00\x00\x00\x00\x00\x00"s;
     vector<uint8_t> buffer(cmd.begin(), cmd.end());
     result = client.send(buffer.data(), buffer.size());
     cout << "[" << now() << "] send() -> " << result.get_code() << ": " << result.get_message() << endl;
