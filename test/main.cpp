@@ -29,7 +29,7 @@ int main() {
     // 把 CA, 证书和私钥从文件读为字符串
 
     fstream ca_file("crt&key/Tester.pem", ios::in);
-    fstream cert_file("crt&key/Tester.crt", ios::in);
+    fstream cert_file("crt&key/Tester.pem", ios::in);
     fstream key_file("crt&key/Tester.key", ios::in);
     if (!ca_file.is_open() || !cert_file.is_open() || !key_file.is_open()) {
         cerr << "Failed to open ca, cert or key" << endl;
@@ -67,7 +67,7 @@ int main() {
     cout << "[" << now() << "] TCP connected to 192.168.69.21:30504" << endl;
 
     // 创建一个 TlsClient 对象, 并进行握手和发送数据
-    TlsClient client(static_cast<int>(sock), {true, ca, cert, key, ""s});
+    TlsClient client(static_cast<int>(sock), {false, true, ca, cert, key, ""s});
     auto result = client.init();
     cout << "[" << now() << "] init() -> " << result.get_code() << ": " << result.get_message() << endl;
     result = client.hand_shake();

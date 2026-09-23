@@ -286,6 +286,10 @@ Result TlsClient::init() {
     return from_ERR("in init() call SSL_CTX_set_min_proto_version()");
   }
 
+  if (cfg.allow_legacy_renegotiation) {
+    SSL_CTX_set_options(ssl_ctx, SSL_OP_LEGACY_SERVER_CONNECT);
+  }
+
   /// 服务器证书校验过程
   auto verify_server = [&]() {
     SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, nullptr);

@@ -36,6 +36,8 @@ public:
 struct Config {
   /// 是否对服务器证书进行验证, 默认为 false
   bool is_verify_server = false;
+  /// 允许连接仅支持 legacy renegotiation 的旧服务端, 默认关闭
+  bool allow_legacy_renegotiation = false;
   /// ca 证书, 不提供就使用默认的
   std::string ca;
 
